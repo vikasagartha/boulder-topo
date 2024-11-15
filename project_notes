@@ -1,2 +1,11 @@
 dont use topoJson files if you arent using the topoJson package --> use
 geoGson. topoJson has some compression benefits.
+
+https://docs.mapbox.com/api/maps/static-tiles/ api used by bostock zoomable map
+tiles example (https://observablehq.com/@d3/zoomable-map-tiles)
+
+to get your ip:
+
+ifconfig | grep "inet " | grep -v 127.0.0.1
+
+you can use this with the port to access a server on your mobile device.
