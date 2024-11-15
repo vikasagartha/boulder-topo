@@ -1,0 +1,2 @@
+dont use topoJson files if you arent using the topoJson package --> use
+geoGson. topoJson has some compression benefits.
