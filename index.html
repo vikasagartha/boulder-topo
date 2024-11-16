@@ -1,65 +1,113 @@
-<!DOCTYPE html>
-<html lang="en">
+<!DOCTYPE html >
+<html>
+  <head>
+      <meta charset="utf-8" />
+      <title>mapboxgl.js + d3.js tutorial - 03</title>
+      <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+      <link href="https://api.tiles.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.css" rel="stylesheet" />
+      <script src="https://api.tiles.mapbox.com/mapbox-gl-js/v0.37.0/mapbox-gl.js"></script>
+      <script src="https://npmcdn.com/csv2geojson@latest/csv2geojson.js"></script>
+      <script src="https://d3js.org/d3.v4.min.js"></script>
 
-<head>
-  <link href='https://fonts.googleapis.com/css?family=Roboto' rel='stylesheet' type='text/css'>
-  <meta charset="utf-8">
-  <title>Vikas' Boulder</title>
-  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>
-  <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="https://d3js.org/d3-geo-projection.v2.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/d3-tile@1"></script>
-</head>
+      <style media="screen">
+          html{ height:100% }
+          body { margin:0; padding:0; height:100%; display:flex; justify-content:center; align-items:center;}
+          #map { width:500px; height:500px;}
 
-<body>
-  <script type="text/javascript">
+          svg {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+          }
 
-    function _map(d3,width,height,url)
-    {
-      const svg = d3.select("body").append('svg')
-      .attr("viewBox", [0, 0, width, height])
-      .attr('width', width)
-      .attr('height', height)
+          circle {
+              fill: #e55e5e;
+              stroke: #e55e5e;
+              stroke-width: 0;
+              cursor: pointer;
+              transition: 0.5s fill, 0.5s stroke-width;
+          }
+          circle:hover {
+              fill: #5e5ee5;
+              stroke-width: 10;
+          }
+      </style>
+  </head>
+  <body>
+    <div id="map">
+    </div>
+    <script>
 
-      const tile = d3.tile()
-      .extent([[0, 0], [width, height]])
-      .tileSize(512)
-      .clampX(false);
+        //////////////////
+        // Mapbox stuff
+        //////////////////
 
-      const zoom = d3.zoom()
-      .scaleExtent([1 << 8, 1 << 22])
-      .extent([[0, 0], [width, height]])
-      .on("zoom", ({transform}) => zoomed(transform));
-
-      let image = svg.append("g")
-      .attr("pointer-events", "none")
-      .selectAll("image");
-
-      svg
-      .call(zoom)
-      .call(zoom.transform, d3.zoomIdentity
-        .translate(width >> 1, height >> 1)
-        .scale(1 << 12));
-
-
-      function zoomed(transform) {
-        const tiles = tile(transform);
-
-        image = image.data(tiles, d => d).join("image")
-        .attr("xlink:href", d => url(...d3.tileWrap(d)))
-        .attr("x", ([x]) => (x + tiles.translate[0]) * tiles.scale)
-        .attr("y", ([, y]) => (y + tiles.translate[1]) * tiles.scale)
-        .attr("width", tiles.scale)
-        .attr("height", tiles.scale);
-      }
-
-      return svg.node();
-    }
+        // Set-up map
+      mapboxgl.accessToken = 'pk.eyJ1Ijoiam9yZGl0b3N0IiwiYSI6ImQtcVkyclEifQ.vwKrOGZoZSj3N-9MB6FF_A';
+        var map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/outdoors-v9',
+            zoom: 5,
+            center: [-119, 36],
+        });
 
 
-    const url = (x, y, z) => `https://api.mapbox.com/styles/v1/mapbox/streets-v11/tiles/${z}/${x}/${y}${devicePixelRatio > 1 ? "@2x" : ""}?access_token=pk.eyJ1IjoidmlrYXNhZ2FydGhhIiwiYSI6ImNtM2o0cGxoYTA3ejMyam9pamRkeTIwZHUifQ.FPdYf4BkgEs7tzcX0WbDng`
-    _map(d3, 715, 300, url)
-  </script>
-</body>
+        //////////////////////////
+        // Mapbox+D3 Connection
+        //////////////////////////
 
+        // Get Mapbox map canvas container
+        var canvas = map.getCanvasContainer();
+
+        // Overlay d3 on the map
+        var svg = d3.select(canvas).append("svg");
+
+
+        // Load map and dataset
+        map.on('load', function () {
+            d3.json("boulders.json", function(err, data) {
+                drawData(data);
+            });
+        });
+
+        // Project GeoJSON coordinate to the map's current state
+        function project(d) {
+            return map.project(new mapboxgl.LngLat(+d[0], +d[1]));
+        }
+
+
+        //////////////
+        // D3 stuff
+        //////////////
+
+        // Draw GeoJSON data with d3
+        var circles;
+        function drawData(data) {
+            // Add circles
+            circles = svg.selectAll("circle")
+                .data(data.features)
+                .enter()
+                .append("circle")
+                    .attr("r", 10)
+                    .on("click", function(d) {
+                        alert(d.properties.name);
+                    });
+
+            // Call the update function
+            update();
+
+            // Update on map interaction
+            map.on("viewreset", update);
+            map.on("move",      update);
+            map.on("moveend",   update);
+        }
+
+        // Update d3 shapes' positions to the map's current state
+        function update() {
+            circles.attr("cx", function(d) { return project(d.geometry.coordinates).x })
+                   .attr("cy", function(d) { return project(d.geometry.coordinates).y });
+        }
+
+    </script>
+  </body>
 </html>
