@@ -1,13 +1,16 @@
 const fs = require('fs')
 console.log('welcome. converting 8a csv to geoJSON----------')
 
-async function doAsyncTask() {
+//Good https://geocoding.geo.census.gov/geocoder/locations/onelineaddress?address=9%20E%20Fort%20Ave,%20Baltimore,%20MD&benchmark=Public_AR_Current&format=json
+//Bad. https://geocoding.geo.census.gov/geocoder?/locations/onelineaddress?address=9+E+Fort+Ave%2C+Baltimore%2C+MD&benchmark=Public_AR_Current&format=json
 
-   const base_url = 'https://geocoding.geo.census.gov/geocoder?'
+async function addressToCoordinates(address) {
+
+   const base_url = 'https://geocoding.geo.census.gov/geocoder'
    const return_type = '/locations'
    const search_type = '/onelineaddress'
    const params = {
-    'address': '9 E Fort Ave, Baltimore, MD',
+    address,
     'benchmark': 'Public_AR_Current',
     'format': 'json'
    }
@@ -16,14 +19,11 @@ async function doAsyncTask() {
     new URLSearchParams(params).toString()
   );
 
-   console.log(new URLSearchParams(params).toString())
-  //console.log(url)
-
-  const result = await fetch(url)
+  const {result} = await fetch(url)
     .then(response => response.json());
 
-  console.log('Fetched from: ' + url);
-  console.log(result);
+  const {addressMatches: [first, ...rest]} = result
+  return {latitude: first.coordinates.y, longitude: first.coordinates.x}
 }
 
 objToGeoJSON = obj => ({
@@ -55,5 +55,5 @@ fs.readFile('vikas-8a.csv', "utf8", (err, inputD) => {
    //    type: 'FeatureCollection',
    //    features
    // }
-   doAsyncTask()
+   addressToCoordinates('1214 61st St, Oakland, CA 94608').then(console.log)
 })

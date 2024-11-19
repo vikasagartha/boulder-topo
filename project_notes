@@ -16,3 +16,5 @@ things i tried:
 2. use mapbox to pull tiles using d3. then adding things on became a pain. i could do this using mapbox studio GUI, but i could not get it to work, and it was a clunky way to handle data.
 3. i wanted to paint d3 svg on top of mapbox tiles, but you are only pulling images from mapbox tiles. how do i know where in an image to place a lat,long point? no way to know.
 4. discovered mapbox js library that allows lat/long info. use that to draw map, but control all data from my end.
+
+Trying to fetch data from census api, running into conflict between encodeURI and URLsearchparams. %20 vs + sign.
