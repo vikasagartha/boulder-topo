@@ -18,3 +18,8 @@ things i tried:
 4. discovered mapbox js library that allows lat/long info. use that to draw map, but control all data from my end.
 
 Trying to fetch data from census api, running into conflict between encodeURI and URLsearchparams. %20 vs + sign.
+
+geocoding: textAddress -> coordinates. was going to use US census bureau, but it only allows csv data for batch requests. but mapbox has a batch request that allows JSON.
+
+ran into a tricky bug parsing csv. there were newlines inside 8a data itself
+which was breaking my line splitting logic.
