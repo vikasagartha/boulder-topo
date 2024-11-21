@@ -46,26 +46,24 @@ function CSVToArray (CSV_string, delimiter) {
    return rows; // Return the parsed data Array
 }
 
-async function addressToCoordinates(address) {
+async function batchGeoCode(queries) {
 
-   const base_url = 'https://geocoding.geo.census.gov/geocoder'
-   const return_type = '/locations'
-   const search_type = '/onelineaddress'
+   const base_url = 'https://api.mapbox.com/search/geocode/v6/batch'
    const params = {
-    address,
-    'benchmark': 'Public_AR_Current',
-    'format': 'json'
+      access_token: 'pk.eyJ1Ijoiam9yZGl0b3N0IiwiYSI6ImQtcVkyclEifQ.vwKrOGZoZSj3N-9MB6FF_A',
    }
-  const url = (
-    base_url + return_type + search_type + '?'+
-    new URLSearchParams(params).toString()
-  );
+  const url = base_url + '?' + new URLSearchParams(params).toString()
 
-  const {result} = await fetch(url)
-    .then(response => response.json());
+  const body = queries.map(q => ({q: q.query, country: q.country, limit:1}))
+  return await fetch(url, {
+      headers: {
+       "Content-Type": "application/json",
+     },
+      method: 'POST',
+      body: JSON.stringify(body)
+   })
+   .then(response => response.json())
 
-  const {addressMatches: [first, ...rest]} = result
-  return {latitude: first.coordinates.y, longitude: first.coordinates.x}
 }
 
 objToGeoJSON = obj => ({
@@ -80,10 +78,8 @@ objToGeoJSON = obj => ({
    }
 })
 
-const isKnown = s => {
-   console.log(s)
-   return !s.toLowerCase().includes('unknown')
-}
+const known = s => !s.toLowerCase().includes('unknown') && s !== ''
+
 const removeExtraQuotes = str => str.replace(/^"(.*)"$/, '$1')
 
 //['a','b','c'], [1,2,3] => {a:1,b:2,c:3}
@@ -114,10 +110,24 @@ fs.readFile('vikas-8a.csv', "utf8", (err, inputD) => {
 
    if(bugCount>0) console.log('Total faulty data count: ' + bugCount + '. If this is the last item on the list, this is not unexpected. 8a incorrectly adds a blank line at the end of csv files.')
 
+   const queries = cleaned.map(({properties: {location_name, sector_name, area_name, country_code}}) => ({
+      query: [location_name, sector_name, area_name, country_code].filter(known).join(', '),
+      country: country_code
+   }))
+
    const geoJSON = {
       type: 'FeatureCollection',
       features: cleaned
    }
+
+   const test = [{
+      query: 'Yosemite',
+      country: 'US',
+   }]
+
+   batchGeoCode(queries)
+      .then(({batch}) => batch.map(f => f.features[0]))
+      .then(console.log)
 
    //console.log(buggy)
    // console.log(features.map(({
