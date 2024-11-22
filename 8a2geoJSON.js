@@ -80,59 +80,41 @@ objToGeoJSON = obj => ({
 
 const known = s => !s.toLowerCase().includes('unknown') && s !== ''
 
-const removeExtraQuotes = str => str.replace(/^"(.*)"$/, '$1')
-
 //['a','b','c'], [1,2,3] => {a:1,b:2,c:3}
 const arrays2Obj = (keys, values) => keys.reduce((o, k, i) => ({...o, [k]: values[i]}), {})
 
-const csvToFeatures = (csv) => {
-   const [r1, ...rest] = csv.split(/\r?\n/)
-   const keys = r1.split(',').map(removeExtraQuotes)
-   const features = rest.map(d => d.split(',').map(removeExtraQuotes))
-   const objects = features
-   return objects.map(objToGeoJSON)
+async function main(){
+
+   fs.readFile('vikas-8a.csv', "utf8", async (err, inputD) => {
+      if (err) throw err;
+      const [keys, ...data] = CSVToArray(inputD, ',')
+      const features = data.map(values => objToGeoJSON(arrays2Obj(keys, values)))
+
+      let bugCount = 0
+      const cleaned = features.filter((d, i) => {
+         if(Object.values(d.properties).every(el => el === undefined || el === null || el === '')) {
+               console.log(`Faulty Data. name: ${d.name}. Located at index: ${i} in data of ${features.length-1} items.`)
+               bugCount+=1
+               return false
+            }
+            return true
+      })
+
+      if(bugCount>0) console.log('Total faulty data count: ' + bugCount + '. If this is the last item on the list, this is not unexpected. 8a incorrectly adds a blank line at the end of csv files.')
+
+      const queries = cleaned.map(({properties: {location_name, sector_name, area_name, country_code}}) => ({
+         query: [location_name, sector_name, area_name, country_code].filter(known).join(', '),
+         country: country_code
+      }))
+
+      const geometries = await batchGeoCode(queries)
+         .then(({batch}) => batch.map((f, i) => f.features[0].geometry))
+
+      const geoJSON = {
+         type: 'FeatureCollection',
+         features: cleaned.map((c, i) => ({...c, geometry: geometries[i]}))
+      }
+   })
 }
 
-fs.readFile('vikas-8a.csv', "utf8", (err, inputD) => {
-   if (err) throw err;
-   const [keys, ...data] = CSVToArray(inputD, ',')
-   const features = data.map(values => objToGeoJSON(arrays2Obj(keys, values)))
-
-   let bugCount = 0
-   const cleaned = features.filter((d, i) => {
-      if(Object.values(d.properties).every(el => el === undefined || el === null || el === '')) {
-            console.log(`Faulty Data. name: ${d.name}. Located at index: ${i} in data of ${features.length-1} items.`)
-            bugCount+=1
-            return false
-         }
-         return true
-   })
-
-   if(bugCount>0) console.log('Total faulty data count: ' + bugCount + '. If this is the last item on the list, this is not unexpected. 8a incorrectly adds a blank line at the end of csv files.')
-
-   const queries = cleaned.map(({properties: {location_name, sector_name, area_name, country_code}}) => ({
-      query: [location_name, sector_name, area_name, country_code].filter(known).join(', '),
-      country: country_code
-   }))
-
-   const geoJSON = {
-      type: 'FeatureCollection',
-      features: cleaned
-   }
-
-   const test = [{
-      query: 'Yosemite',
-      country: 'US',
-   }]
-
-   batchGeoCode(queries)
-      .then(({batch}) => batch.map(f => f.features[0]))
-      .then(console.log)
-
-   //console.log(buggy)
-   // console.log(features.map(({
-   //    properties: {location_name, sector_name, area_name}
-   // }) => [location_name,sector_name,area_name].filter(isKnown).join(',')))
-   //const addresses = features.map(f => f.properties)
-   //addressToCoordinates('1214 61st St, Oakland, CA 94608').then(console.log)
-})
+main()
