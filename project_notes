@@ -23,3 +23,5 @@ geocoding: textAddress -> coordinates. was going to use US census bureau, but it
 
 ran into a tricky bug parsing csv. there were newlines inside 8a data itself
 which was breaking my line splitting logic.
+
+cannot access node modules, for example 'fs', from browser. you need to use a separate server with api's and all.
