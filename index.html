@@ -12,7 +12,7 @@
       <style media="screen">
           html{ height:100% }
           body { margin:0; padding:0; height:100%; display:flex; justify-content:center; align-items:center;}
-          #map { width:500px; height:500px;}
+          #map { width:100%; height:100%;}
 
           svg {
             position: absolute;
@@ -88,9 +88,9 @@
                 .data(data.features)
                 .enter()
                 .append("circle")
-                    .attr("r", 10)
+                    .attr("r", 5)
                     .on("click", function(d) {
-                        alert(d.properties.name);
+                        alert(`Query: ${JSON.stringify(d.mapboxQuery)}\nResult: ${d.mapboxProperties.full_address}`)
                     });
 
             // Call the update function

@@ -17,6 +17,10 @@ async function batchGeoCode(queries) {
       method: 'POST',
       body: JSON.stringify(body)
    })
+   .then(response => {
+      if(response.status !== 200) throw "Geocoding api failure."
+      return response
+   })
    .then(response => response.json())
 
 }
@@ -62,13 +66,20 @@ async function main(filename){
          country: country_code
       }))
 
-      const geometries = await batchGeoCode(queries)
-         .then(d => {console.log(d); return d})
-         .then(({batch}) => batch.map((f, i) => f.features[0].geometry))
+      const mapboxData = await batchGeoCode(queries)
+         .then(({batch}) => batch.map((f, i) => ({
+            geometry: f.features[0].geometry,
+            properties: f.features[0].properties
+         })))
 
       const geoJSON = {
          type: 'FeatureCollection',
-         features: cleaned.map((c, i) => ({...c, geometry: geometries[i]}))
+         features: cleaned.map((c, i) => ({
+            ...c,
+            geometry: mapboxData[i].geometry,
+            mapboxProperties: mapboxData[i].properties,
+            mapboxQuery: queries[i]
+         }))
       }
 
       fs.writeFile('boulders.json', JSON.stringify(geoJSON), 'utf8', () => console.log('written to boulders.json'));
