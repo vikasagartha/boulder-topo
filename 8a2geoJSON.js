@@ -37,6 +37,44 @@ const objToGeoJSON = obj => ({
    }
 })
 
+async function readFile(path) {
+ return new Promise((resolve, reject) => {
+   fs.readFile(path, 'utf8', function (err, data) {
+     if (err) {
+       reject(err)
+     }
+     resolve(data)
+   })
+ })
+}
+
+async function parse8aCSV(filename){
+
+   let inputD
+
+   try {
+      inputD = await readFile(filename)
+   } catch(err) {
+      console.log('Error reading csv file: '+ err)
+   }
+
+   const [keys, ...data] = csv2Array(inputD, ',')
+   const features = data.map(values => objToGeoJSON(arrays2Obj(keys, values)))
+
+   let bugCount = 0
+   const cleaned = features.filter((d, i) => {
+      if(Object.values(d.properties).every(el => el === undefined || el === null || el === '')) {
+            console.log(`Faulty Data. name: ${d.name}. Located at index: ${i} in data of ${features.length-1} items.`)
+            bugCount+=1
+            return false
+         }
+         return true
+   })
+
+   if(bugCount>0) console.log('Total faulty data count: ' + bugCount + '. If this is the last item on the list, this is not unexpected. 8a incorrectly adds a blank line at the end of csv files.')
+   return cleaned
+}
+
 const known = s => !s.toLowerCase().includes('unknown') && s !== ''
 
 //['a','b','c'], [1,2,3] => {a:1,b:2,c:3}
@@ -44,48 +82,32 @@ const arrays2Obj = (keys, values) => keys.reduce((o, k, i) => ({...o, [k]: value
 
 async function main(filename){
 
-   fs.readFile(filename, "utf8", async (err, inputD) => {
-      if (err) throw err;
-      const [keys, ...data] = csv2Array(inputD, ',')
-      const features = data.map(values => objToGeoJSON(arrays2Obj(keys, values)))
+   const csvData = await parse8aCSV(filename)
 
-      let bugCount = 0
-      const cleaned = features.filter((d, i) => {
-         if(Object.values(d.properties).every(el => el === undefined || el === null || el === '')) {
-               console.log(`Faulty Data. name: ${d.name}. Located at index: ${i} in data of ${features.length-1} items.`)
-               bugCount+=1
-               return false
-            }
-            return true
-      })
+   const queries = csvData.map(({properties: {location_name, sector_name, area_name, country_code}}) => ({
+      query: [location_name, sector_name, area_name, country_code].filter(known).join(', '),
+      country: country_code
+   }))
 
-      if(bugCount>0) console.log('Total faulty data count: ' + bugCount + '. If this is the last item on the list, this is not unexpected. 8a incorrectly adds a blank line at the end of csv files.')
+   const mapboxData = await batchGeoCode(queries)
+      .then(({batch}) => batch.map((f, i) => ({
+         geometry: f.features[0].geometry,
+         properties: f.features[0].properties
+      })))
 
-      const queries = cleaned.map(({properties: {location_name, sector_name, area_name, country_code}}) => ({
-         query: [location_name, sector_name, area_name, country_code].filter(known).join(', '),
-         country: country_code
+   const geoJSON = {
+      type: 'FeatureCollection',
+      features: csvData.map((c, i) => ({
+         ...c,
+         geometry: mapboxData[i].geometry,
+         mapboxProperties: mapboxData[i].properties,
+         mapboxQuery: queries[i]
       }))
+   }
 
-      const mapboxData = await batchGeoCode(queries)
-         .then(({batch}) => batch.map((f, i) => ({
-            geometry: f.features[0].geometry,
-            properties: f.features[0].properties
-         })))
+   fs.writeFile('boulders.json', JSON.stringify(geoJSON), 'utf8', () => console.log('written to boulders.json'));
 
-      const geoJSON = {
-         type: 'FeatureCollection',
-         features: cleaned.map((c, i) => ({
-            ...c,
-            geometry: mapboxData[i].geometry,
-            mapboxProperties: mapboxData[i].properties,
-            mapboxQuery: queries[i]
-         }))
-      }
-
-      fs.writeFile('boulders.json', JSON.stringify(geoJSON), 'utf8', () => console.log('written to boulders.json'));
-
-     return geoJSON
-   })
+  return geoJSON
 }
 
 main('vikas-8a.csv')
