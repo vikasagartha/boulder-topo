@@ -1,0 +1,24 @@
+{
+  "name": "boulder-topo",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "rm -r dist && mkdir dist && tsc && npm run build:cp-public",
+    "build:cp-public": "cp ./public/** ./dist",
+    "type": "tsc --noEmit"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.2",
+    "express": "^4.21.2",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.2"
+  },
+  "dependencies": {
+    "@types/multer": "^1.4.12",
+    "multer": "^1.4.5-lts.1"
+  }
+}

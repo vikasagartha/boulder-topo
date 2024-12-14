@@ -1,0 +1,16 @@
+<html>
+  <head>
+    <link rel="stylesheet" href="https://unpkg.com/mvp.css">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <h1>Welcome!</h1>
+    <p>I (Vikas Agartha) built this tool to geographically visualize 8a.nu data for climbers. Please download a csv of your 8a data (available in the profile section), and upload it here to see a map of your data!</p>
+    <form action='/upload' method='POST' enctype="multipart/form-data">
+      <label for="file">File</label>
+      <input name='file' type='file' accept='.csv'/>
+      <button disabled type='submit'>Submit</button>
+    </form>
+    <script type='module' src="./index.js"></script>
+  </body>
+</html>
