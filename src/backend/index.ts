@@ -103,7 +103,6 @@ interface Query {
 
 const buildQueryFile = async (filename: string) : Promise<string | Error> => {
 
-   console
    const features = await parse8aCSV(filename)
    if(features instanceof Error) return features
    const queries : Query[] = features.map(({properties: {location_name, sector_name, area_name, country_code, id}}) => ({
