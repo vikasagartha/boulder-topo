@@ -33,17 +33,18 @@ app.get('/styles.css', (req: express.Request, res:express.Response) => {
 app.post('/upload', upload.single('file'), async (req: express.Request, res: express.Response) => {
   if (!req.file) {
     res.status(400).json({ error: 'No file uploaded' });
+    return
   }
-  else {
-    const dataPath = `${__dirname}/data/${req.file.filename}`
-    const queryPath = await buildQueryFile(dataPath)
 
-    if(queryPath instanceof Error) {
-      res.status(400).send({message: 'Your data was successfully uploaded, but there was an error building a query file for geocoding your data. Please contact admin: vikasagartha@gmail.com'});
-    } else {
-      res.json({ message: 'Query file generated!', dataPath, queryPath});
-    }
+  const dataPath = `${__dirname}/data/${req.file.filename}`
+  const queryPath = await buildQueryFile(dataPath)
+
+  if(queryPath instanceof Error) {
+    res.status(400).send({message: 'Your data was successfully uploaded, but there was an error building a query file for geocoding your data. Please contact admin: vikasagartha@gmail.com'});
+    return
   }
+  res.json({ message: 'Query file generated!', dataPath, queryPath});
+
 });
 
 app.listen(port, () => {
