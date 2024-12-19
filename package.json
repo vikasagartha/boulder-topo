@@ -2,9 +2,11 @@
   "name": "boulder-topo",
   "version": "1.0.0",
   "scripts": {
-    "build": "rm -r dist && mkdir dist && tsc && npm run build:cp-public",
+    "build": "npm run build:clean && tsc && npm run build:cp-public",
+    "build:clean": "rm -r dist && mkdir dist && mkdir dist/data",
     "build:cp-public": "cp ./public/** ./dist",
-    "type": "tsc --noEmit"
+    "type": "npm run build: clean && tsc --noEmit",
+    "start": "node ./dist/server.js"
   },
   "author": "",
   "license": "ISC",

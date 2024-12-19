@@ -101,6 +101,31 @@ interface Query {
    id: string
 }
 
+const buildQueryFile = async (filename: string) : Promise<string | Error> => {
+
+   console
+   const features = await parse8aCSV(filename)
+   if(features instanceof Error) return features
+   const queries : Query[] = features.map(({properties: {location_name, sector_name, area_name, country_code, id}}) => ({
+      text: [location_name, sector_name, area_name, country_code].filter(known).join(', '),
+      id
+   }))
+   const lines = queries.map((q, i) => ([q.id, `"${q.text}"`]).join(','))
+
+   try {
+      const fname = `${filename}-queries.csv`
+      const success = await writeFileSync(fname, lines.join('\n'), 'utf8')
+      return fname
+   } catch (error: unknown){
+      console.log('Error writing query file!')
+      if(error instanceof Error) {
+         return error
+      }
+      return Error('Unknown error writing query file.')
+
+   }
+}
+
 const main = async (filename: string) : Promise<void> => {
 
    //Parse csv from 8a, convert to GeoJSON, and construct query strings to be fed into geocoder, write those to a csv.
@@ -146,4 +171,4 @@ const main = async (filename: string) : Promise<void> => {
 
 }
 
-export default main
+export {buildQueryFile}
