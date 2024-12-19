@@ -13,6 +13,8 @@ Shane Lynn
 5th November 2016
 """
 
+import sys
+import os
 import pandas as pd
 import requests
 import logging
@@ -36,10 +38,14 @@ logger.addHandler(ch)
 API_KEY = 'AIzaSyBpMl6ENHySfWJnvDHcvOpmh5Rx0as98-k' 
 # Backoff time sets how many minutes to wait between google pings when your API limit is hit
 BACKOFF_TIME = 30
-# Set your output file name here.
-output_filename = 'output.csv'
+
 # Set your input file here
-input_filename = "input.csv"
+#input_filename = "input.csv
+input_filename = sys.argv[1]
+# Set your output file name here.
+#output_filename = 'output.csv'
+output_filename = os.path.dirname(input_filename) + '/' + os.path.basename(input_filename).strip('-queries.csv') + '-geodata.csv'
+
 # Specify the column name in your input data that contains addresses here
 address_column_name = "Address"
 # Return Full Google Results? If True, full JSON results from Google are included in output
