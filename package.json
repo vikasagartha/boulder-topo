@@ -1,12 +1,15 @@
 {
   "name": "boulder-topo",
   "version": "1.0.0",
+  "config": {
+    "pythonBinary": "envs/boulder-topo-env/bin/python"
+  },
   "scripts": {
     "build": "npm run build:clean && tsc && npm run build:cp-public",
     "build:clean": "rm -r dist && mkdir dist && mkdir dist/data",
     "build:cp-public": "cp ./public/** ./dist",
     "type": "npm run build:clean && tsc --noEmit",
-    "start": "node ./dist/server.js"
+    "start": "PYTHON_BINARY=$npm_package_config_pythonBinary node ./dist/server.js"
   },
   "author": "",
   "license": "ISC",
