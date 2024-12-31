@@ -2,7 +2,7 @@
   "name": "boulder-topo",
   "version": "1.0.0",
   "config": {
-    "pythonBinary": "envs/boulder-topo-env/bin/python"
+    "pythonBinary": "./envs/boulder-topo-env/bin/python"
   },
   "scripts": {
     "build": "npm run build:clean && tsc && npm run build:cp-public",
