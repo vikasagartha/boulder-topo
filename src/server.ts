@@ -1,4 +1,4 @@
-import {writeFile} from 'fs'
+import {writeFile, appendFileSync} from 'fs'
 import express from 'express'
 import multer from 'multer'
 import { spawn } from 'child_process'
@@ -37,7 +37,11 @@ app.post('/upload', upload.single('file'), async (req: express.Request, res: exp
     return
   }
 
+  const filePrefix = req.file.filename.replace('-data.csv', '')
+  console.log(filePrefix, 'PF:::')
+
   const dataPath = `${__dirname}/data/${req.file.filename}`
+  const logPath = `${__dirname}/data/${filePrefix}-logs.txt`
   const queryPath = await buildQueryFile(dataPath)
   const pythonPath = process.env.PYTHON_BINARY
 
@@ -51,14 +55,16 @@ app.post('/upload', upload.single('file'), async (req: express.Request, res: exp
     return
   }
 
-  const pyProg = await spawn(pythonPath, ['./batch_geocoder.py', queryPath])
+  const pyProg = spawn(pythonPath, ['./batch_geocoder.py', queryPath])
 
-  pyProg.stdout.on('data', function(data) {
+  pyProg.stdout.on('data', async function(data) {
     console.log('stdout: ' + data);
+    await appendFileSync(logPath, data)
   });
 
-  pyProg.stderr.on('data', (data) => {
+  pyProg.stderr.on('data', async (data) => {
     console.log('stderr: ' + data);
+    await appendFileSync(logPath, data)
   });
 
   pyProg.on('close', code => {
@@ -66,7 +72,7 @@ app.post('/upload', upload.single('file'), async (req: express.Request, res: exp
     if(code !== 0){
       res.status(400).send({
         message: 'There was an error geocoding your data. Please contact admin: vikasagartha@gmail.com',
-        code
+        logPath
       });
     }
   })

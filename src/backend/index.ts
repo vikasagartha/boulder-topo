@@ -112,7 +112,7 @@ const buildQueryFile = async (filename: string) : Promise<string | Error> => {
    const lines = queries.map((q, i) => ([q.id, `"${q.text}"`]).join(','))
 
    try {
-      const fname = `${filename}-queries.csv`
+      const fname = `${filename.replace('-data.csv', '')}-queries.csv`
       const success = await writeFileSync(fname, lines.join('\n'), 'utf8')
       return fname
    } catch (error: unknown){
