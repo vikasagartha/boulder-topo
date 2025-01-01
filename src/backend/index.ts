@@ -109,7 +109,10 @@ const buildQueryFile = async (filename: string) : Promise<string | Error> => {
       text: [location_name, sector_name, area_name, country_code].filter(known).join(', '),
       id
    }))
-   const lines = queries.map((q, i) => ([q.id, `"${q.text}"`]).join(','))
+   const lines = [
+      'Id,Address',
+      ...queries.map((q, i) => ([q.id, `"${q.text}"`]).join(','))
+   ]
 
    try {
       const fname = `${filename.replace('-data.csv', '')}-queries.csv`
